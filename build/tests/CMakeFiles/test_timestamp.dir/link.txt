@@ -1,0 +1,1 @@
+/usr/bin/c++ -g CMakeFiles/test_timestamp.dir/test_timestamp.cpp.o -o test_timestamp  -Wl,-rpath,/home/zhouhf/projects/mymuduo/build/lib ../lib/libmymuduo.so 

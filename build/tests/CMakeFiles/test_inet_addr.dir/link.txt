@@ -1,0 +1,1 @@
+/usr/bin/c++ -g CMakeFiles/test_inet_addr.dir/test_inet_addr.cpp.o -o test_inet_addr  -Wl,-rpath,/home/zhouhf/projects/mymuduo/build/lib ../lib/libmymuduo.so 
