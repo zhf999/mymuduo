@@ -1,8 +1,0 @@
-/home/zhouhf/projects/mymuduo/build/CMakeFiles/mymuduo.dir
-/home/zhouhf/projects/mymuduo/build/CMakeFiles/test.dir
-/home/zhouhf/projects/mymuduo/build/CMakeFiles/edit_cache.dir
-/home/zhouhf/projects/mymuduo/build/CMakeFiles/rebuild_cache.dir
-/home/zhouhf/projects/mymuduo/build/tests/CMakeFiles/test_timestamp.dir
-/home/zhouhf/projects/mymuduo/build/tests/CMakeFiles/test.dir
-/home/zhouhf/projects/mymuduo/build/tests/CMakeFiles/edit_cache.dir
-/home/zhouhf/projects/mymuduo/build/tests/CMakeFiles/rebuild_cache.dir
