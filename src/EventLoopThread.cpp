@@ -10,7 +10,7 @@
 namespace mymuduo {
 
     EventLoopThread::EventLoopThread(EventLoopThread::ThreadInitCallback cb, const std::string &name)
-    : thread_([&](){threadFunc();},name),
+    : thread_([this](){threadFunc();},name),
     callback_(std::move(cb)){
 
     }
@@ -27,10 +27,11 @@ namespace mymuduo {
     EventLoop *EventLoopThread::startLoop() {
         thread_.start(); // 开启新线程执行threadFunc
 
+        // run in main thread:
         EventLoop *loop = nullptr;
         {
             std::unique_lock lock(mutex_);
-            while(loop_!= nullptr)
+            while(loop_== nullptr) // wait until loop_ is set
             {
                 cond_.wait(lock);
             }
@@ -39,12 +40,12 @@ namespace mymuduo {
         return loop;
     }
 
+    // run in new thread
     void EventLoopThread::threadFunc() {
-        // TODO: this should be allocated from heap?
         EventLoop loop;
         if(callback_)
         {
-            callback_(loop_);
+            callback_(&loop);
         }
 
         {

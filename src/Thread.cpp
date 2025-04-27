@@ -31,13 +31,13 @@ namespace mymuduo {
         int num = ++numCreated_;
         if(name_.empty())
         {
-            name_ = std::format("Thread {}",num);
+            name_ = std::format("Thread {}",num+1);
         }
     }
 
     void Thread::start() {
         started_ = true;
-        sem_t  sem;
+        sem_t sem;
         sem_init(&sem,false, 0);
         thread_ = std::make_shared<std::thread>([&](){
             tid_ = CurrentThread::tid();
@@ -46,7 +46,7 @@ namespace mymuduo {
             func_();
         });
 
-        sem_wait(&sem);
+        sem_wait(&sem); // return after thread is started
     }
 
     void Thread::join() {

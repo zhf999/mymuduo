@@ -38,10 +38,11 @@ namespace mymuduo {
         void setWriteCompleteCallback(WriteCompleteCallback cb) { writeCompleteCallback_ = std::move(cb); };
 
         void setThreadNum(int numThreads);
+        const std::string& name() { return name_; };
 
         void start();
     private:
-        void onConnection(int sockfd, const InetAddress &peerAddr);
+        void handleNewConnection(int sockfd, const InetAddress &peerAddr);
         void removeConnection(const TcpConnectionPtr &conn);
         void removeConnectionInLoop(const TcpConnectionPtr &conn);
 

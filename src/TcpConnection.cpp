@@ -105,9 +105,9 @@ namespace mymuduo {
     void TcpConnection::handleClose() {
         Logger::LogInfo("TcpConnection::handleClose peer:{}",peerAddr_.toIpPort());
         setState(kDisconnected);
-        channel_->disableAll();
+        channel_->disableAll(); // TODO: What if there is data in outputBuffer_?
         TcpConnectionPtr connPtr(shared_from_this());
-        connectionCallback_(connPtr); // TODO: why conn callback?
+        connectionCallback_(connPtr);
         closeCallback_(connPtr);
     }
 
@@ -128,6 +128,7 @@ namespace mymuduo {
     void TcpConnection::send(const std::string &buf) {
         if(state_==kConnected)
         {
+            // duplicated if
             if(loop_->isInLoopThread())
             {
                 sendInLoop(buf.c_str(),buf.size());
@@ -192,11 +193,11 @@ namespace mymuduo {
                 loop_->queueInLoop(
                         [this,oldLen,remaining](){
                             highWaterMarkCallback_(shared_from_this(),oldLen+remaining);
-                        }
+                            }
                         );
             }
             outputBuffer_.append((char*)message+n_wrote,remaining);
-            if(channel_->isWriting())
+            if(!channel_->isWriting())
                 channel_->enableWriting();
         }
     }
@@ -209,6 +210,7 @@ namespace mymuduo {
         connectionCallback_(shared_from_this());
     }
 
+    // TODO: this can be invoked in Destructor?
     void TcpConnection::connectDestroyed() {
         Logger::LogDebug("TcpConnection::connectDestroyed - peer:{} state:{}",peerAddr_.toIpPort(),state_.load());
         if(state_==kConnected)

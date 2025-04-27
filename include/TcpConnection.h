@@ -30,7 +30,7 @@ namespace mymuduo {
         const InetAddress& localAddress() const { return localAddr_; }
         const InetAddress& peerAddress() const { return peerAddr_; }
 
-        bool connected() { return state_ = kConnected; }
+        bool connected() { return state_ == kConnected; }
 
         void send(const std::string& buf);
         void shutdown();

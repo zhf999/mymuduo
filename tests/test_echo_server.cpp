@@ -8,16 +8,16 @@
 using namespace mymuduo;
 using namespace std::placeholders;
 
-class ChatServer{
+class EchoServer{
 public:
-    ChatServer(EventLoop *loop,
+    EchoServer(EventLoop *loop,
                const InetAddress& inetAddress,
                const std::string& nameArg) : _server(loop, inetAddress,nameArg),
                                              _loop(loop)
     {
-        _server.setConnectionCallback(std::bind(&ChatServer::onConnection,this,_1));
-        _server.setMessageCallback(std::bind(&ChatServer::onMessage,this,_1,_2,_3));
-        _server.setThreadNum(0);
+        _server.setConnectionCallback(std::bind(&EchoServer::onConnection, this, _1));
+        _server.setMessageCallback(std::bind(&EchoServer::onMessage, this, _1, _2, _3));
+        _server.setThreadNum(1);
     }
 
     void start()
@@ -29,9 +29,9 @@ private:
         std::cout<<conn->peerAddress().toIpPort()<< " -> "
                  << conn->localAddress().toIpPort();
         if(conn->connected()) {
-            std::cout << " [state: online] " << std::endl;
+            Logger::LogInfo("{}: Connection {} is UP",_server.name(), conn->name());
         } else{
-            std::cout << " [state: offline] " << std::endl;
+            Logger::LogInfo("{}: Connection {} is DOWN",_server.name(), conn->name());
             conn->shutdown();
         }
     }
@@ -40,7 +40,7 @@ private:
                    Buffer *buffer,
                    Timestamp timestamp) {
         std::string buf = buffer->retrieveAllAsString();
-        std::cout << "receive data: " << buf << " time: " << timestamp.toString() << std::endl;
+        Logger::LogInfo("Receive string {} from connection {}", buf, conn->name());
         conn->send(buf);
     }
 
@@ -52,7 +52,7 @@ int main() {
     Logger::instance().setStandardLevel(Logger::LogLevel::DEBUG);
     EventLoop loop;
     InetAddress addr("127.0.0.1",8080);
-    ChatServer server(&loop,addr,"ChatServer");
+    EchoServer server(&loop, addr, "EchoServer");
     server.start();
     loop.loop();
     return 0;

@@ -50,7 +50,7 @@ namespace mymuduo {
 
         using ChannelList = std::vector<Channel*>;
 
-        std::atomic_bool looping_{false};
+//        std::atomic_bool looping_{false};
         std::atomic_bool quit_{false}; // 标识是否退出loop循环
 
         const pid_t threadId_;
@@ -61,9 +61,8 @@ namespace mymuduo {
         /*
          * 当mainLoop获取一个新用户的Channel，通过轮询算法获得一个subLoop
          * 通过wakeupFd来唤醒该线程
-         *
          */
-        int wakeupFd_;
+//        int wakeupFd_;
         std::unique_ptr<Channel> wakeupChannel_;
 
         ChannelList activeChannels_{};

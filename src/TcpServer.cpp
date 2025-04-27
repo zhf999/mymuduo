@@ -28,7 +28,7 @@ namespace mymuduo {
         acceptor_->setNewConnectionCallback(
                 [this](auto sock, auto peerAddr)
                 {
-                    this->onConnection(sock, peerAddr);
+                    this->handleNewConnection(sock, peerAddr);
                 }
                 );
     }
@@ -47,7 +47,7 @@ namespace mymuduo {
         }
     }
 
-    void TcpServer::onConnection(int sockfd, const InetAddress &peerAddr) {
+    void TcpServer::handleNewConnection(int sockfd, const InetAddress &peerAddr) {
         EventLoop *ioLoop = threadPool_->getNextLoop();
         std::string connName = std::format("{}-{}#{}",name_,ipPort_,nextConnId_);
         nextConnId_++;

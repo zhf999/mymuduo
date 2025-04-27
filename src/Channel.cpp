@@ -52,7 +52,7 @@ namespace mymuduo {
     }
 
     void Channel::handleEventWithGuard(Timestamp receiveTime) {
-        Logger::LogInfo("channel handle event: {}",r_events_);
+        Logger::LogInfo("Channel::handleEventWithGuard - channel handle event: {}",r_events_);
         if((r_events_ & EPOLLHUP) && !(r_events_ & EPOLLIN))
         {
             if(closeCallback_)

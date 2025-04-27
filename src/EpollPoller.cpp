@@ -30,7 +30,7 @@ namespace mymuduo{
     }
 
     Timestamp EpollPoller::poll(int timeoutMs, mymuduo::Poller::ChannelList *activeChannels) {
-        Logger::LogDebug("start epolling...channel count={}",
+        Logger::LogDebug("EpollPoller::poll - channel count={}",
                          channels_.size());
         int numEvents = epoll_wait(epoll_fd_,events_.data(),static_cast<int>(events_.size()),timeoutMs);
         // 提前存好errno，防止更改其他线程更改
@@ -47,7 +47,7 @@ namespace mymuduo{
             }
         } else if(numEvents == 0)
         {
-            Logger::LogDebug("epoll timeout!");
+            Logger::LogDebug("EpollPoller::poll - epoll timeout!");
         } else
         {
             if(saveErrno != EINTR)
@@ -78,7 +78,7 @@ namespace mymuduo{
 
     void EpollPoller::updateChannel(mymuduo::Channel *channel) {
         const int index = channel->index();
-        Logger::LogInfo("updating channel to epoll: fd={} events={} index={}",
+        Logger::LogInfo("EpollPoller::updateChannel updating channel to epoll: fd={} events={} index={}",
                         channel->fd(),channel->events(),channel->index());
         if(index == kNew || index == kDeleted)
         {

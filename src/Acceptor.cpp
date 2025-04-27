@@ -54,6 +54,7 @@ namespace mymuduo {
     }
 
     void Acceptor::listen() {
+        Logger::LogDebug("Acceptor::listen - ownerLoop:{}", static_cast<void*>(loop_));
         listening_ = true;
         acceptSocket_.listen();
         acceptChannel_.enableReading();
