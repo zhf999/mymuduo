@@ -22,7 +22,7 @@ namespace mymuduo{
     private:
         static const int kInitEventListSize = 16;
         void fillActiveChannels(int numEvents, ChannelList *activeChannels) const;
-        void update(int operation, Channel* channel);
+        void update(int operation, Channel* channel) const;
 
         using EventList = std::vector<epoll_event>;
         int epoll_fd_;

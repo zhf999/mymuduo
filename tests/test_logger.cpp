@@ -3,14 +3,15 @@
 //
 
 #include "Logger.h"
+
 using namespace mymuduo;
 
 int main()
 {
     Logger::instance().addFileOutput(Logger::LogLevel::DEBUG, "debuglog.log");
-    Logger::LogDebug("this is a debug");
-    Logger::LogInfo("this is a info");
-    Logger::LogError("this is a error");
-    Logger::LogFatal("this is a fatal");
+    LOG_DEBUG("this is a debug %d",12412);
+    LOG_INFO("this is a info %d",123456);
+    LOG_ERROR("this is a error");
+    LOG_FATAL("this is a fatal");
     return 0;
 }

@@ -14,12 +14,13 @@ namespace mymuduo {
         int sockfd = ::socket(AF_INET,SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0);
         if(sockfd<0)
         {
-            Logger::LogFatal("create socket fail at createNonBlocking, errno:{}", errno);
+            LOG_FATAL("create socket fail at createNonBlocking, errno=%d", errno);
         }
         return sockfd;
     }
 
     Acceptor::~Acceptor() {
+        LOG_DEBUG("ownerLoop=%p", loop_);
         acceptChannel_.disableAll();
         acceptChannel_.removeFromLoop();
     }
@@ -29,7 +30,7 @@ namespace mymuduo {
      acceptSocket_(createNonBlocking()),
      acceptChannel_(loop, acceptSocket_.fd())
     {
-        Logger::LogDebug("Acceptor::init - ownerLoop:{} addr:{}", static_cast<void*>(loop), listenAddr.toIpPort());
+        LOG_DEBUG("ownerLoop=%p addr=%s", static_cast<void*>(loop), listenAddr.toIpPort().c_str());
         acceptSocket_.setReuseAddr(true);
         acceptSocket_.setReusePort(reusePort);
         acceptSocket_.bindAddress(listenAddr);
@@ -37,6 +38,7 @@ namespace mymuduo {
     }
 
     void Acceptor::handleRead() {
+        LOG_DEBUG("owner loop %p",loop_);
         InetAddress peerAddr;
         int conn_fd = acceptSocket_.accept(&peerAddr);
         if(conn_fd >= 0)
@@ -49,12 +51,12 @@ namespace mymuduo {
             }
         }else
         {
-            Logger::LogError("{}: accept fail, errno:{}",__FUNCTION__,errno);
+            LOG_ERROR("accept fail, errno=%d",errno);
         }
     }
 
     void Acceptor::listen() {
-        Logger::LogDebug("Acceptor::listen - ownerLoop:{}", static_cast<void*>(loop_));
+        LOG_INFO("Acceptor::listen - ownerLoop:{}", static_cast<void*>(loop_));
         listening_ = true;
         acceptSocket_.listen();
         acceptChannel_.enableReading();

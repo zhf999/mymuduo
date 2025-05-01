@@ -15,7 +15,7 @@ static int createEventFd()
     int evtFd = eventfd(0,EFD_NONBLOCK|EFD_CLOEXEC);
     if(evtFd < 0)
     {
-        mymuduo::Logger::LogFatal("eventfd error:{}",errno);
+        LOG_FATAL("error=%d",errno);
     }
     return evtFd;
 }
@@ -32,12 +32,10 @@ namespace mymuduo {
         poller_(PollerFactory::newDefaultPoller(this)),
         wakeupChannel_(new Channel(this,createEventFd()))
     {
-        Logger::LogInfo("EventLoop::constructor - EventLoop created {} in thread {}",
-                         static_cast<void*>(this),threadId_);
+        LOG_INFO("EventLoop %p created", this);
         if(t_loopInThisThread)
         {
-            Logger::LogFatal("Another EventLoop {} exists in this thread {}",
-                             static_cast<void*>(t_loopInThisThread), threadId_);
+            LOG_FATAL("Another EventLoop %p exists", static_cast<void*>(t_loopInThisThread));
         }
         else{
             t_loopInThisThread = this;
@@ -49,8 +47,7 @@ namespace mymuduo {
     }
 
     EventLoop::~EventLoop() {
-        Logger::LogDebug("EventLoop::destructor - EventLoop {} in {}",
-                         static_cast<void*>(this), threadId_);
+        LOG_DEBUG("Event loop=%p is destructed", this);
         wakeupChannel_->disableAll();
         wakeupChannel_->removeFromLoop();
         close(wakeupChannel_->fd());
@@ -58,19 +55,19 @@ namespace mymuduo {
     }
 
     void EventLoop::handleRead() {
-        Logger::LogDebug("EventLoop::handleRead - EventLoop {}",static_cast<void*>(this));
+        LOG_INFO("Event loop=%p",this);
         uint64_t one = 1;
         ssize_t n = read(wakeupChannel_->fd(), &one, sizeof(one));
         if(n != sizeof(one))
         {
-            Logger::LogError("EventLoop::handleRead() reads {} bytes instead of {}",
+            LOG_ERROR("reads %d bytes instead of %d",
                              n, sizeof(one));
         }
     }
 
     void EventLoop::loop() {
         quit_ = false;
-        Logger::LogInfo("EventLoop {} start looping",static_cast<void*>(this));
+        LOG_INFO("EventLoop %p start looping",this);
 
         while(!quit_)
         {
@@ -85,10 +82,11 @@ namespace mymuduo {
             doPendingFunctors();
         }
 
-        Logger::LogInfo("EventLoop {} stop looping",static_cast<void*>(this));
+        LOG_INFO("EventLoop %d stop looping", this);
     }
 
     void EventLoop::quit() {
+        LOG_DEBUG("EventLoop %p quit", this);
         quit_ = true;
         if(!isInLoopThread()) // 如果是在其他线程中调用quit
         {
@@ -119,11 +117,12 @@ namespace mymuduo {
     }
 
     void EventLoop::wakeup() {
+        LOG_DEBUG("EventLoop %p wakeup", this);
         uint64_t one=1;
         ssize_t n = write(wakeupChannel_->fd(),&one,sizeof(one));
         if(n!=sizeof(one))
         {
-            Logger::LogError("EventLoop::wakeup() write {} bytes instead of {}",n, sizeof(one));
+            LOG_ERROR("EventLoop::wakeup() write %d bytes instead of %d",n, sizeof(one));
         }
     }
 

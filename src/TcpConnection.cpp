@@ -42,35 +42,37 @@ namespace mymuduo {
                 }
                 );
 
-        Logger::LogInfo("TcpConnection created {} at fd={}",name_,sockfd);
+        LOG_INFO("name=%s, fd=%d",name_.c_str(),sockfd);
         socket_->setKeepAlive(true);
 
     }
 
     TcpConnection::~TcpConnection() {
-        Logger::LogInfo("TcpConnection dis-created {} at fd={}",name_,channel_->fd());
+        LOG_INFO("name=%s, fd=%d",name_.c_str(),channel_->fd());
     }
 
     void TcpConnection::handleRead(Timestamp receiveTime) {
+        LOG_INFO("name=%s, fd=%d",name_.c_str(),channel_->fd());
         int savedErrno = 0;
         ssize_t n = inputBuffer_.readFd(socket_->fd(), &savedErrno);
         if(n>0)
         {
-            Logger::LogDebug("TcpConnection::handleRead peer{} - buffer:{}", peerAddr_.toIpPort() ,std::string(inputBuffer_.peek(),inputBuffer_.readableBytes()));
+            LOG_DEBUG("buffer=%s",std::string(inputBuffer_.peek(),inputBuffer_.readableBytes()).c_str());
             messageCallback_(shared_from_this(),&inputBuffer_,receiveTime);
         }else if(n==0)
         {
-            Logger::LogDebug("TcpConnection::handleRead peer:{} - receive FIN",peerAddr_.toIpPort());
+            LOG_DEBUG("receive FIN");
             handleClose();
         }else
         {
             errno = savedErrno;
-            Logger::LogError("TcpConnection::handleRead");
+            LOG_ERROR("errno=%d",errno);
             handleError();
         }
     }
 
     void TcpConnection::handleWrite() {
+        LOG_INFO("name=%s, fd=%d",name_.c_str(),channel_->fd());
         if(channel_->isWriting())
         {
             int saveErrno = 0;
@@ -94,16 +96,16 @@ namespace mymuduo {
             }
             else
             {
-                Logger::LogError("TcpConnection::handwrite fail! errno:{} ",saveErrno);
+                LOG_ERROR("conn name=%s errno=%d ",name_.c_str(), saveErrno);
             }
         } else
         {
-            Logger::LogError("Tcp connection fd={} is down, no more writing", socket_->fd());
+            LOG_ERROR("conn %s is down, no more writing", name_.c_str());
         }
     }
 
     void TcpConnection::handleClose() {
-        Logger::LogInfo("TcpConnection::handleClose peer:{}",peerAddr_.toIpPort());
+        LOG_INFO("conn name=%s", name_.c_str());
         setState(kDisconnected);
         channel_->disableAll(); // TODO: What if there is data in outputBuffer_?
         TcpConnectionPtr connPtr(shared_from_this());
@@ -114,21 +116,22 @@ namespace mymuduo {
     void TcpConnection::handleError() {
         int optVal;
         socklen_t optLen = sizeof(optVal);
-        int err = 0;
+        int err;
         if(::getsockopt(socket_->fd(),SOL_SOCKET,SO_ERROR,&optVal,&optLen)<0){
             err = errno;
         }else
         {
             err = optVal;
         }
-        Logger::LogError("TcpConnection::handleError name:{} - SO_ERROR:{}",
-                         name_,err);
+        LOG_ERROR("conn name=%s errno=%d",
+                         name_.c_str(),err);
     }
 
     void TcpConnection::send(const std::string &buf) {
+        LOG_DEBUG("schedule `send` conn name=%s, msg=%s",name_.c_str(),buf.substr(0,10).c_str());
         if(state_==kConnected)
         {
-            // duplicated if
+            // TODO: duplicated if statement
             if(loop_->isInLoopThread())
             {
                 sendInLoop(buf.c_str(),buf.size());
@@ -144,13 +147,15 @@ namespace mymuduo {
     }
 
     void TcpConnection::sendInLoop(const void *message, size_t len) {
+        LOG_INFO("start `send` conn name=%s", name_.c_str());
+
         ssize_t n_wrote = 0;
         size_t remaining = len;
         bool faultError = false;
 
         if(state_==kDisconnected)
         {
-            Logger::LogError("TcpConnection disconnected, give up writing");
+            LOG_ERROR("conn name=%s is down, give up writing",name_.c_str());
         }
 
         // channel第一次开始写数据，并且缓冲区没有待发送数据
@@ -173,7 +178,7 @@ namespace mymuduo {
                 n_wrote = 0;
                 if(errno!=EWOULDBLOCK)
                 {
-                    Logger::LogError("TcpConnection::sendInLoop");
+                    LOG_ERROR("conn name=%s",name_.c_str());
                     if(errno==EPIPE||errno==ECONNRESET)
                     {
                         faultError = true;
@@ -203,6 +208,7 @@ namespace mymuduo {
     }
 
     void TcpConnection::connectionEstablished() {
+        LOG_DEBUG("conn name=%s",name_.c_str());
         setState(kConnected);
         channel_->tie(shared_from_this());
         channel_->enableReading();
@@ -212,7 +218,7 @@ namespace mymuduo {
 
     // TODO: this can be invoked in Destructor?
     void TcpConnection::connectDestroyed() {
-        Logger::LogDebug("TcpConnection::connectDestroyed - peer:{} state:{}",peerAddr_.toIpPort(),state_.load());
+        LOG_DEBUG("conn name:%s state:%d",peerAddr_.toIpPort().c_str(),state_.load());
         if(state_==kConnected)
         {
             setState(kDisconnected);
@@ -223,6 +229,7 @@ namespace mymuduo {
     }
 
     void TcpConnection::shutdown() {
+        LOG_DEBUG("conn name %s will closed by server",name_.c_str());
         if(state_==kConnected)
         {
             setState(kDisconnecting);
@@ -233,6 +240,7 @@ namespace mymuduo {
     }
 
     void TcpConnection::shutdownInLoop() {
+        LOG_DEBUG("conn name %s is closed by server",name_.c_str());
         if(!channel_->isWriting())
         {
             socket_->shutdownWrite();

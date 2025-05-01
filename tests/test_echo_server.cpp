@@ -26,12 +26,10 @@ public:
     }
 private:
     void onConnection(const TcpConnectionPtr& conn) {
-        std::cout<<conn->peerAddress().toIpPort()<< " -> "
-                 << conn->localAddress().toIpPort();
         if(conn->connected()) {
-            Logger::LogInfo("{}: Connection {} is UP",_server.name(), conn->name());
+//            Logger::LogInfo("{}: Connection {} is UP",_server.name(), conn->name());
         } else{
-            Logger::LogInfo("{}: Connection {} is DOWN",_server.name(), conn->name());
+//            Logger::LogInfo("{}: Connection {} is DOWN",_server.name(), conn->name());
             conn->shutdown();
         }
     }
@@ -40,7 +38,7 @@ private:
                    Buffer *buffer,
                    Timestamp timestamp) {
         std::string buf = buffer->retrieveAllAsString();
-        Logger::LogInfo("Receive string {} from connection {}", buf, conn->name());
+        LOG_INFO("Receive string %s from connection %s", buf.c_str(), conn->name().c_str());
         conn->send(buf);
     }
 
@@ -49,7 +47,7 @@ private:
 };
 
 int main() {
-    Logger::instance().setStandardLevel(Logger::LogLevel::DEBUG);
+    Logger::instance().setStandardLevel(Logger::LogLevel::INFO);
     EventLoop loop;
     InetAddress addr("127.0.0.1",8080);
     EchoServer server(&loop, addr, "EchoServer");

@@ -15,11 +15,11 @@ namespace mymuduo {
         ~Socket();
 
         int fd() const { return sockfd_; };
-        void bindAddress(const InetAddress &localAddr);
-        void listen();
+        void bindAddress(const InetAddress &localAddr) const;
+        void listen() const;
         int accept(InetAddress *peerAddr) const;
 
-        void shutdownWrite();
+        void shutdownWrite() const;
 
         void setTcpNoDelay(bool on) const;
         void setReuseAddr(bool on) const;

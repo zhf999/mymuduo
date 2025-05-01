@@ -2,6 +2,7 @@
 // Created by zhouhf on 2025/4/12.
 //
 
+#include <format>
 #include "TcpServer.h"
 #include "Logger.h"
 // TODO: rethink use of lambda and std::bind
@@ -10,7 +11,7 @@ namespace mymuduo {
     {
         if(loop == nullptr)
         {
-            Logger::LogFatal("Loop pointer can't be nullptr!");
+            LOG_FATAL("Loop pointer can't be nullptr!");
         }
         return loop;
     }
@@ -24,7 +25,7 @@ namespace mymuduo {
     acceptor_(std::make_unique<Acceptor>(loop,listenAddr,option==kReusePort)),
     threadPool_(std::make_shared<EventLoopThreadPool>(loop,name_))
     {
-        Logger::LogDebug("TcpServer::constructor - name:{} addr:{}", name_,ipPort_);
+        LOG_INFO("name=%s", name_.c_str(),ipPort_.c_str());
         acceptor_->setNewConnectionCallback(
                 [this](auto sock, auto peerAddr)
                 {
@@ -34,7 +35,7 @@ namespace mymuduo {
     }
 
     TcpServer::~TcpServer() {
-        Logger::LogDebug("TcpServer::destructor - name:{} addr:{}",name_, ipPort_);
+        LOG_DEBUG("name=%s",name_.c_str(), ipPort_.c_str());
         for(auto &item:connections_)
         {
             TcpConnectionPtr conn(item.second);
@@ -48,17 +49,17 @@ namespace mymuduo {
     }
 
     void TcpServer::handleNewConnection(int sockfd, const InetAddress &peerAddr) {
+        LOG_INFO("new connection from addr=%s, fd=%d",peerAddr.toIpPort().c_str(),sockfd);
+
         EventLoop *ioLoop = threadPool_->getNextLoop();
-        std::string connName = std::format("{}-{}#{}",name_,ipPort_,nextConnId_);
+        std::string connName = std::format("{}-{}#{}",name_,peerAddr.toIpPort(),nextConnId_);
         nextConnId_++;
-        Logger::LogInfo("TcpServer [{}]::new connection [{}] from {}",
-                        name_, connName, peerAddr.toIpPort());
 
         sockaddr_in local{};
         socklen_t addrLen = sizeof(local);
         if(::getsockname(sockfd,(sockaddr*)&local, &addrLen)<0)
         {
-            Logger::LogError("sockets: getLocalAddr fail!");
+            LOG_ERROR("sockets: getLocalAddr fail!");
         }
         InetAddress localAddr(local);
         TcpConnectionPtr connectionPtr = std::make_shared<TcpConnection>(
@@ -93,7 +94,7 @@ namespace mymuduo {
     void TcpServer::start() {
         if(!started_)
         {
-            Logger::LogInfo("TcpServer::start - server name:{}, addr:{}",name_,ipPort_);
+            LOG_INFO("server name=%s started",name_.c_str());
             started_ = true;
             threadPool_->start(threadInitCallback_);
             loop_->runInLoop(
@@ -104,7 +105,7 @@ namespace mymuduo {
     }
 
     void TcpServer::removeConnection(const TcpConnectionPtr &conn) {
-        Logger::LogDebug("TcpServer::removeConnection - remove connection from {}",conn->peerAddress().toIpPort());
+        LOG_DEBUG("remove connection from %s",conn->peerAddress().toIpPort().c_str());
         loop_->runInLoop(
                 [conn,this](){
                     removeConnectionInLoop(conn);
@@ -114,7 +115,7 @@ namespace mymuduo {
     }
 
     void TcpServer::removeConnectionInLoop(const TcpConnectionPtr &conn) {
-        Logger::LogInfo("TcpServer::removeConnectionInLoop - remove connection from {}",conn->peerAddress().toIpPort());
+        LOG_INFO("remove connection from %s",conn->peerAddress().toIpPort().c_str());
         connections_.erase(conn->name());
         EventLoop *ioLoop = conn->getLoop();
         ioLoop->queueInLoop(

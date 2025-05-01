@@ -18,17 +18,17 @@ namespace mymuduo {
         close(sockfd_);
     }
 
-    void Socket::bindAddress(const InetAddress &localAddr){
+    void Socket::bindAddress(const InetAddress &localAddr) const{
         if(0 != bind(sockfd_,(sockaddr*)localAddr.getSockAddr(),sizeof(sockaddr_in)))
         {
-            Logger::LogFatal("bind sockfd {} fail",sockfd_);
+            LOG_FATAL("bind sockfd fd=%d fail",sockfd_);
         }
     }
 
-    void Socket::listen() {
+    void Socket::listen() const {
         if(0 != ::listen(sockfd_,1024))
         {
-            Logger::LogFatal("listen sockfd {} fail",sockfd_);
+            LOG_FATAL("listen sockfd fd=%d fail",sockfd_);
         }
     }
 
@@ -43,10 +43,10 @@ namespace mymuduo {
         return connFd;
     }
 
-    void Socket::shutdownWrite() {
+    void Socket::shutdownWrite() const {
         if(::shutdown(sockfd_,SHUT_WR) < 0)
         {
-            Logger::LogError("shutdown write {} error",sockfd_);
+            LOG_ERROR("shutdown write fd=%d error",sockfd_);
         }
     }
 

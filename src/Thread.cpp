@@ -42,7 +42,7 @@ namespace mymuduo {
         thread_ = std::make_shared<std::thread>([&](){
             tid_ = CurrentThread::tid();
             sem_post(&sem);
-            Logger::LogInfo("{} started...",name_);
+            LOG_INFO("thread %s tid=%d started...",name_.c_str(), tid_);
             func_();
         });
 

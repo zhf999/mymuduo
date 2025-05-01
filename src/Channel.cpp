@@ -19,10 +19,13 @@ namespace mymuduo {
         r_events_(0),
         index_(-1),
         is_tied_(false){
+        LOG_DEBUG("fd=%d", fd_);
         loop_->updateChannel(this);
     }
 
-    Channel::~Channel() = default;
+    Channel::~Channel(){
+        LOG_DEBUG("fd=%d", fd_);
+    }
 
     void Channel::tie(const std::shared_ptr<void> &obj) {
         tie_ = obj;
@@ -52,7 +55,7 @@ namespace mymuduo {
     }
 
     void Channel::handleEventWithGuard(Timestamp receiveTime) {
-        Logger::LogInfo("Channel::handleEventWithGuard - channel handle event: {}",r_events_);
+        LOG_INFO("channel handle event: %d",r_events_);
         if((r_events_ & EPOLLHUP) && !(r_events_ & EPOLLIN))
         {
             if(closeCallback_)

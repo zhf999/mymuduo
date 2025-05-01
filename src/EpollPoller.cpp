@@ -2,7 +2,6 @@
 // Created by zhouhf on 2025/4/15.
 //
 #include <cerrno>
-#include <cstring>
 
 #include "EpollPoller.h"
 #include "Logger.h"
@@ -19,18 +18,20 @@ namespace mymuduo{
         : Poller(loop),
         epoll_fd_(epoll_create1(EPOLL_CLOEXEC)),
         events_(kInitEventListSize){
+        LOG_DEBUG("owner_loop=%p, epoll_fd=%d",  loop, epoll_fd_);
         if(epoll_fd_ < 0 )
         {
-            Logger::LogFatal("epoll_create error:{}", errno);
+            LOG_FATAL("epoll_create error=%d", errno);
         }
     }
 
     EpollPoller::~EpollPoller() {
+        LOG_DEBUG("owner_loop=%p, epoll_fd=%d", ownerLoop, epoll_fd_);
         close(epoll_fd_);
     }
 
     Timestamp EpollPoller::poll(int timeoutMs, mymuduo::Poller::ChannelList *activeChannels) {
-        Logger::LogDebug("EpollPoller::poll - channel count={}",
+        LOG_DEBUG("start polling - channel count=%d",
                          channels_.size());
         int numEvents = epoll_wait(epoll_fd_,events_.data(),static_cast<int>(events_.size()),timeoutMs);
         // 提前存好errno，防止更改其他线程更改
@@ -39,7 +40,7 @@ namespace mymuduo{
 
         if(numEvents > 0)
         {
-            Logger::LogDebug("{} events happened",numEvents);
+            LOG_DEBUG("%d events happened",numEvents);
             fillActiveChannels(numEvents,activeChannels);
             if(numEvents == events_.size())
             {
@@ -47,13 +48,13 @@ namespace mymuduo{
             }
         } else if(numEvents == 0)
         {
-            Logger::LogDebug("EpollPoller::poll - epoll timeout!");
+            LOG_DEBUG("epoll timeout!");
         } else
         {
             if(saveErrno != EINTR)
             {
                 errno = saveErrno;
-                Logger::LogError("epoll error!");
+                LOG_ERROR("epoll error!");
             }
         }
         return now;
@@ -64,7 +65,7 @@ namespace mymuduo{
     }
 
     void EpollPoller::removeChannel(mymuduo::Channel *channel) {
-        Logger::LogInfo("removing channel from epoll: fd={} events={} index={}",
+        LOG_INFO("removing channel from epoll: fd=%d events=%d index=%d",
                         channel->fd(),channel->events(),channel->index());
         int fd = channel->fd();
         int index = channel->index();
@@ -78,7 +79,7 @@ namespace mymuduo{
 
     void EpollPoller::updateChannel(mymuduo::Channel *channel) {
         const int index = channel->index();
-        Logger::LogInfo("EpollPoller::updateChannel updating channel to epoll: fd={} events={} index={}",
+        LOG_DEBUG("updating channel to epoll: fd=%d events=%d index=%d",
                         channel->fd(),channel->events(),channel->index());
         if(index == kNew || index == kDeleted)
         {
@@ -112,7 +113,7 @@ namespace mymuduo{
         }
     }
 
-    void EpollPoller::update(int operation, Channel *channel) {
+    void EpollPoller::update(int operation, Channel *channel) const {
         epoll_event event{};
         event.events = channel->events();
         event.data.ptr = channel;
@@ -121,11 +122,11 @@ namespace mymuduo{
         {
             if(operation==EPOLL_CTL_DEL)
             {
-                Logger::LogError("epoll_ctl failed! op={} fd={} errno={}",
+                LOG_ERROR("epoll_ctl failed! op=%d fd=%d errno=%d",
                                  operation, channel->fd(), errno);
             }else
             {
-                Logger::LogFatal("epoll_ctl failed! op={} fd={} errno={}",
+                LOG_FATAL("epoll_ctl failed! op=%d fd=%d errno=%d",
                                  operation, channel->fd(),errno);
             }
         }

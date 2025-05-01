@@ -10,11 +10,6 @@ namespace mymuduo::CurrentThread {
 
     void cacheTid();
 
-    inline int tid() {
-        if (t_cachedTid == 0)[[unlikely]] {
-            cacheTid();
-        }
-        return t_cachedTid;
-    }
+    int tid();
 }
 

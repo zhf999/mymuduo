@@ -29,7 +29,6 @@ namespace mymuduo {
     protected:
         using ChannelMap = std::unordered_map<int, Channel*>;
         ChannelMap channels_{};
-    private:
         EventLoop *ownerLoop;
     };
 } // mymuduo

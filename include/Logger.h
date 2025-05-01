@@ -4,14 +4,17 @@
 #pragma once
 
 #include <string>
+#include <cstdio>
+#include <cstdarg>
 #include <sstream>
 #include <fstream>
 #include <vector>
-#include <format>
 #include <source_location>
 #include <memory>
+#include <cstring>
 #include "noncopyable.h"
 #include "Timestamp.h"
+#include "CurrentThread.h"
 
 namespace mymuduo{
     class Logger:noncopyable{
@@ -30,30 +33,6 @@ namespace mymuduo{
             return logger;
         };
 
-        template<typename... Args>
-        static void LogDebug(std::format_string<Args...> fmt, Args&&... args)
-        {
-            instance().submitLog(LogLevel::DEBUG, fmt, std::forward<Args>(args)...);
-        };
-
-        template <typename... Args>
-        static void LogInfo(std::format_string<Args...> fmt, Args&&... args)
-        {
-            instance().submitLog(LogLevel::INFO, fmt, std::forward<Args>(args)...);
-        };
-
-        template <typename... Args>
-        static void LogError(std::format_string<Args...> fmt, Args&&... args)
-        {
-            instance().submitLog(LogLevel::ERROR, fmt, std::forward<Args>(args)...);
-        };
-
-        template <typename... Args>
-        static void LogFatal(std::format_string<Args...> fmt, Args&&... args)
-        {
-            instance().submitLog(LogLevel::FATAL, fmt, std::forward<Args>(args)...);
-            exit(0);
-        };
 
         void addFileOutput(LogLevel level, const std::string& file_path)
         {
@@ -68,6 +47,38 @@ namespace mymuduo{
             outputs_[0].logLevel = level;
         }
 
+        void submitLog(LogLevel level,
+                       const char* func,
+                       int threadId,
+                       const char* fmt,
+                       ...) {
+            char msg[1024];
+            va_list args;
+            va_start(args, fmt);
+            vsnprintf(msg, sizeof(msg), fmt, args);
+            va_end(args);
+
+            char formatted[2048];
+
+            snprintf(formatted, sizeof(formatted), "[%s][%s][tid:%d]-[%s]: %s\n",
+                     Logger::levelToString(level).c_str(),
+                     Timestamp::now().toString().c_str(),
+                     threadId,
+                     func,
+                     msg);
+
+            for(auto &output : outputs_) {
+                if(level >= output.logLevel) {
+                    *output.os << formatted;
+                    output.os->flush();
+                }
+            }
+
+            if(level == LogLevel::FATAL) {
+                exit(EXIT_FAILURE);
+            }
+        }
+
     private:
         Logger(){
             outputs_.emplace_back(
@@ -78,23 +89,6 @@ namespace mymuduo{
                     ));
         }
 
-        template<typename... Args>
-        void submitLog(LogLevel level,
-                       std::format_string<Args...> fmt, Args&&... args)
-        {
-            std::string msg = std::format("[{}]-[{}]: {}\n",
-                                          levelToString(level),
-                                          Timestamp::now().toString(),
-                                          std::format(fmt,std::forward<Args>(args)...));
-            for(auto &output:outputs_)
-            {
-                if(level>=output.logLevel)
-                {
-                    *output.os << msg;
-                    output.os->flush();
-                }
-            }
-        }
 
         static std::string levelToString(Logger::LogLevel level) {
             switch (level) {
@@ -120,3 +114,24 @@ namespace mymuduo{
     };
 
 }
+
+
+#define LOG_DEBUG(fmt, ...) \
+    mymuduo::Logger::instance().submitLog(mymuduo::Logger::LogLevel::DEBUG,  \
+    std::source_location::current().function_name(), mymuduo::CurrentThread::tid(),  \
+    fmt, ##__VA_ARGS__)
+
+#define LOG_INFO(fmt, ...) \
+    mymuduo::Logger::instance().submitLog(mymuduo::Logger::LogLevel::INFO,   \
+    std::source_location::current().function_name(), mymuduo::CurrentThread::tid(),  \
+    fmt, ##__VA_ARGS__)
+
+#define LOG_ERROR(fmt, ...) \
+    mymuduo::Logger::instance().submitLog(mymuduo::Logger::LogLevel::ERROR,  \
+    std::source_location::current().function_name(), mymuduo::CurrentThread::tid(),   \
+    fmt, ##__VA_ARGS__)
+
+#define LOG_FATAL(fmt, ...) \
+    mymuduo::Logger::instance().submitLog(mymuduo::Logger::LogLevel::FATAL,  \
+    std::source_location::current().function_name(), mymuduo::CurrentThread::tid(),   \
+    fmt, ##__VA_ARGS__)
