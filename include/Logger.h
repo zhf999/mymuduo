@@ -47,11 +47,25 @@ namespace mymuduo{
             outputs_[0].logLevel = level;
         }
 
+        bool shouldLog(LogLevel level) const
+        {
+            for (const auto &output : outputs_) {
+                if (level >= output.logLevel) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         void submitLog(LogLevel level,
                        const char* func,
                        int threadId,
                        const char* fmt,
                        ...) {
+            if (level != LogLevel::FATAL && !shouldLog(level)) {
+                return;
+            }
+
             char msg[1024];
             va_list args;
             va_start(args, fmt);
@@ -117,19 +131,34 @@ namespace mymuduo{
 
 
 #define LOG_DEBUG(fmt, ...) \
-    mymuduo::Logger::instance().submitLog(mymuduo::Logger::LogLevel::DEBUG,  \
-    std::source_location::current().function_name(), mymuduo::CurrentThread::tid(),  \
-    fmt, ##__VA_ARGS__)
+    do { \
+        auto &_logger = mymuduo::Logger::instance(); \
+        if (_logger.shouldLog(mymuduo::Logger::LogLevel::DEBUG)) { \
+            _logger.submitLog(mymuduo::Logger::LogLevel::DEBUG, \
+            std::source_location::current().function_name(), mymuduo::CurrentThread::tid(), \
+            fmt, ##__VA_ARGS__); \
+        } \
+    } while (0)
 
 #define LOG_INFO(fmt, ...) \
-    mymuduo::Logger::instance().submitLog(mymuduo::Logger::LogLevel::INFO,   \
-    std::source_location::current().function_name(), mymuduo::CurrentThread::tid(),  \
-    fmt, ##__VA_ARGS__)
+    do { \
+        auto &_logger = mymuduo::Logger::instance(); \
+        if (_logger.shouldLog(mymuduo::Logger::LogLevel::INFO)) { \
+            _logger.submitLog(mymuduo::Logger::LogLevel::INFO, \
+            std::source_location::current().function_name(), mymuduo::CurrentThread::tid(), \
+            fmt, ##__VA_ARGS__); \
+        } \
+    } while (0)
 
 #define LOG_ERROR(fmt, ...) \
-    mymuduo::Logger::instance().submitLog(mymuduo::Logger::LogLevel::ERROR,  \
-    std::source_location::current().function_name(), mymuduo::CurrentThread::tid(),   \
-    fmt, ##__VA_ARGS__)
+    do { \
+        auto &_logger = mymuduo::Logger::instance(); \
+        if (_logger.shouldLog(mymuduo::Logger::LogLevel::ERROR)) { \
+            _logger.submitLog(mymuduo::Logger::LogLevel::ERROR, \
+            std::source_location::current().function_name(), mymuduo::CurrentThread::tid(), \
+            fmt, ##__VA_ARGS__); \
+        } \
+    } while (0)
 
 #define LOG_FATAL(fmt, ...) \
     mymuduo::Logger::instance().submitLog(mymuduo::Logger::LogLevel::FATAL,  \
