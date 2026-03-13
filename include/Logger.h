@@ -37,14 +37,17 @@ namespace mymuduo{
         void addFileOutput(LogLevel level, const std::string& file_path)
         {
             auto fs = std::make_shared<std::ofstream >(file_path,std::ios ::out);
-            if(!fs->is_open())
+            if(fs->is_open()) {
                 outputs_.emplace_back(level,fs);
+                refreshMinLogLevel();
+            }
 //            else Logger::LogError("Can't add file output stream: {}",file_path);
         };
 
         void setStandardLevel(LogLevel level)
         {
             outputs_[0].logLevel = level;
+            refreshMinLogLevel();
         }
 
         void submitLog(LogLevel level,
@@ -52,6 +55,23 @@ namespace mymuduo{
                        int threadId,
                        const char* fmt,
                        ...) {
+            // Fast path: skip all formatting if no output will emit this level.
+            if (level != LogLevel::FATAL && level < minLogLevel_) {
+                return;
+            }
+
+            bool shouldEmit = false;
+            for (const auto &output : outputs_) {
+                if (level >= output.logLevel) {
+                    shouldEmit = true;
+                    break;
+                }
+            }
+
+            if (!shouldEmit && level != LogLevel::FATAL) {
+                return;
+            }
+
             char msg[1024];
             va_list args;
             va_start(args, fmt);
@@ -70,11 +90,16 @@ namespace mymuduo{
             for(auto &output : outputs_) {
                 if(level >= output.logLevel) {
                     *output.os << formatted;
-                    output.os->flush();
+                    if (level >= LogLevel::ERROR) {
+                        output.os->flush();
+                    }
                 }
             }
 
             if(level == LogLevel::FATAL) {
+                for (auto &output : outputs_) {
+                    output.os->flush();
+                }
                 exit(EXIT_FAILURE);
             }
         }
@@ -87,6 +112,7 @@ namespace mymuduo{
                             &std::cout,
                             [](std::ostream*){}
                     ));
+            refreshMinLogLevel();
         }
 
 
@@ -110,7 +136,17 @@ namespace mymuduo{
             std::shared_ptr<std::ostream> os;
         };
 
+        void refreshMinLogLevel() {
+            minLogLevel_ = LogLevel::DISABLED;
+            for (const auto &output : outputs_) {
+                if (output.logLevel < minLogLevel_) {
+                    minLogLevel_ = output.logLevel;
+                }
+            }
+        }
+
         std::vector<Output> outputs_{};
+        LogLevel minLogLevel_{LogLevel::DISABLED};
     };
 
 }
