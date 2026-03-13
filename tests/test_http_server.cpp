@@ -50,11 +50,11 @@ int main(int argc, char *argv[]) {
     if (argc > 2) {
         threadNum = std::atoi(argv[2]);
         if (threadNum <= 0) {
-            threadNum = 1;
+            threadNum = 0;
         }
     }
 
-    Logger::instance().setStandardLevel(Logger::LogLevel::INFO);
+    Logger::instance().setStandardLevel(Logger::LogLevel::ERROR);
 
     EventLoop loop;
     InetAddress listenAddress("0.0.0.0", static_cast<uint16_t>(port));

@@ -78,7 +78,7 @@ namespace mymuduo {
         {
             *saveErrno = errno;
         }
-        return 0;
+        return n;
     }
 
     const char *Buffer::findSubstr(const char *substr) const{
