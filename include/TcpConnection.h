@@ -35,6 +35,9 @@ namespace mymuduo {
         void send(const std::string& buf);
         void shutdown();
 
+        void setContext(std::shared_ptr<void> context) { context_ = std::move(context); }
+        const std::shared_ptr<void>& getContext() const { return context_; }
+
         // 连接建立和断开都会调用
         void setConnectionCallback(ConnectionCallback cb) { connectionCallback_ = std::move(cb); };
         void setMessageCallback(MessageCallback cb) { messageCallback_ = std::move(cb);};
@@ -77,6 +80,7 @@ namespace mymuduo {
 
         Buffer inputBuffer_;
         Buffer outputBuffer_;
+        std::shared_ptr<void> context_;
     };
 
 } // mymuduo

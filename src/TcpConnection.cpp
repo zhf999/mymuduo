@@ -79,6 +79,7 @@ namespace mymuduo {
             ssize_t n = outputBuffer_.writeFd(socket_->fd(),&saveErrno);
             if(n>0)
             {
+                outputBuffer_.retrieve(static_cast<size_t>(n));
                 if(outputBuffer_.readableBytes()==0)
                 {
                     channel_->disableWriting();
@@ -96,7 +97,10 @@ namespace mymuduo {
             }
             else
             {
-                LOG_ERROR("conn name=%s errno=%d ",name_.c_str(), saveErrno);
+                if(saveErrno != EAGAIN)
+                {
+                    LOG_ERROR("conn name=%s errno=%d ",name_.c_str(), saveErrno);
+                }
             }
         } else
         {

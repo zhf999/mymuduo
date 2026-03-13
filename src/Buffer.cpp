@@ -33,11 +33,12 @@ namespace mymuduo {
             }
             else
             {
+                const size_t readable = readableBytes();
                 std::copy(begin()+readerIndex_,
                           begin()+writerIndex_,
                           begin()+kCheapPrepend);
                 readerIndex_ = kCheapPrepend;
-                writerIndex_ = readerIndex_ = readableBytes();
+                writerIndex_ = readerIndex_ + readable;
             }
         }
     }

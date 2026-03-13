@@ -30,9 +30,7 @@ namespace mymuduo::http {
                            std::string name,
                            TcpServer::Option option)
         : tcpServer_(loop, listenAddr, std::move(name), option),
-          requestCallback_(defaultHttpCallback),
-          contextsMutex_(),
-          contexts_() {
+          requestCallback_(defaultHttpCallback) {
         using namespace std::placeholders;
         tcpServer_.setConnectionCallback(std::bind(&HttpServer::onConnection, this, _1));
         tcpServer_.setMessageCallback(std::bind(&HttpServer::onMessage, this, _1, _2, _3));
@@ -47,13 +45,19 @@ namespace mymuduo::http {
     }
 
     void HttpServer::onConnection(const TcpConnectionPtr &conn) {
-        if (!conn->connected()) {
-            removeContext(conn->name());
+        if (conn->connected()) {
+            conn->setContext(std::make_shared<HttpContext>());
+        } else {
+            conn->setContext(nullptr);
         }
     }
 
     void HttpServer::onMessage(const TcpConnectionPtr &conn, Buffer *buf, Timestamp receiveTime) {
-        std::shared_ptr<HttpContext> context = getOrCreateContext(conn->name());
+        std::shared_ptr<HttpContext> context = std::static_pointer_cast<HttpContext>(conn->getContext());
+        if (!context) {
+            context = std::make_shared<HttpContext>();
+            conn->setContext(context);
+        }
         const bool parseResult = context->parse(buf, receiveTime);
 
         if (!parseResult) {
@@ -64,7 +68,7 @@ namespace mymuduo::http {
             response.setBody("400 Bad Request\n");
             conn->send(response.toString());
             conn->shutdown();
-            removeContext(conn->name());
+            conn->setContext(nullptr);
             return;
         }
 
@@ -93,21 +97,5 @@ namespace mymuduo::http {
         response->setStatusMessage("Not Found");
         response->setContentType("text/plain; charset=utf-8");
         response->setBody("404 Not Found: " + request.getUrl() + "\n");
-    }
-
-    std::shared_ptr<HttpContext> HttpServer::getOrCreateContext(const std::string &connectionName) {
-        std::lock_guard<std::mutex> lock(contextsMutex_);
-        auto it = contexts_.find(connectionName);
-        if (it == contexts_.end()) {
-            auto [newIt, inserted] = contexts_.emplace(connectionName, std::make_shared<HttpContext>());
-            (void) inserted;
-            return newIt->second;
-        }
-        return it->second;
-    }
-
-    void HttpServer::removeContext(const std::string &connectionName) {
-        std::lock_guard<std::mutex> lock(contextsMutex_);
-        contexts_.erase(connectionName);
     }
 } // namespace mymuduo::http

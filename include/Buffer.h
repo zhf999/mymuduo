@@ -28,6 +28,16 @@ namespace mymuduo {
 
         std::string retrieveAsString(size_t len);
 
+        void retrieve(size_t len)
+        {
+            popHead(len);
+        }
+
+        void retrieveAll()
+        {
+            popHeadAll();
+        }
+
         std::string retrieveAllAsString()
         {
             return retrieveAsString(readableBytes());

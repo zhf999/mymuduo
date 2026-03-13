@@ -6,9 +6,7 @@
 
 #include <functional>
 #include <memory>
-#include <mutex>
 #include <string>
-#include <unordered_map>
 
 #include "HttpContext.h"
 #include "HttpResponse.h"
@@ -36,13 +34,7 @@ namespace mymuduo::http {
 
         static void defaultHttpCallback(const HttpRequest &request, HttpResponse *response);
 
-        std::shared_ptr<HttpContext> getOrCreateContext(const std::string &connectionName);
-        void removeContext(const std::string &connectionName);
-
         TcpServer tcpServer_;
         HttpCallback requestCallback_;
-
-        std::mutex contextsMutex_;
-        std::unordered_map<std::string, std::shared_ptr<HttpContext>> contexts_;
     };
 } // namespace mymuduo::http
