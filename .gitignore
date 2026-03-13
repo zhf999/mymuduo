@@ -1,0 +1,6 @@
+build/
+.idea/
+.vscode
+cmake-build-release/
+.clion.source.upload.marker
+*swp

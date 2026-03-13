@@ -1,0 +1,40 @@
+# mymuduo 网络库
+
+本仓库是参考 [muduo网络库](https://github.com/chenshuo/muduo) 重新实现的基于 Reactor 模式的高性能 C++ 网络库。相比原版，本项目移除了冗余断言，采用更现代的 C++ 语法，并统一了代码风格。
+
+**兼容性**：仅支持 Linux 系统 (基于 Ubuntu Server 24.04 开发)  
+**项目状态**：持续开发中，欢迎提交 Issue 或参与讨论
+
+---
+
+## 项目结构
+
+- `build/`   : 编译生成的二进制文件
+- `src/`     : 核心源码
+- `include/` : 头文件
+- `test/`    : 单元测试
+- `examples/`: 示例程序
+
+---
+
+## 核心特性
+
+- 精简实现 Reactor 核心逻辑
+- 采用现代 C++ 语法 (C++11/14/17 特性)
+- 移除原版非必要的断言检查
+- 改进代码可读性和一致性
+
+---
+
+## 快速开始
+
+```bash
+# 一键编译项目
+./build.sh
+
+# 安装到用户目录，无需 root
+./build.sh --prefix "$HOME/.local"
+
+# 安装到系统目录
+sudo ./build.sh --install
+```
